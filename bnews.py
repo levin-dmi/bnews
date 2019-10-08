@@ -11,6 +11,14 @@ PAGE_LIST = {'Bridgesport': {'url': 'http://bridgesport.ru',
                              'soup string':
                                  'table[class = "contentpaneopen"] td[valign = "top"][class != "createdate"]',
                              'sign': '[bridgesport.ru](http://bridgesport.ru)', },
+             'ebl': {'url': 'http://www.eurobridge.org',
+                     'encoding': 'utf-8',
+                     'soup string': 'div[class = "item-details"] h3',
+                     'sign': '[eurobridge.org](http://www.eurobridge.org)', },
+             'wbf': {'url': 'http://www.worldbridge.org',
+                     'encoding': 'utf-8',
+                     'soup string': 'div[class *= "WBF-News"] h2',
+                     'sign': '[worldbridge.org](http://www.worldbridge.org)', },
              'AKeluin': {'url': 'http://akelyin.ru',
                                 'encoding': 'utf-8',
                                 'soup string': 'h2',
@@ -128,16 +136,20 @@ for current_page in PAGE_LIST:
     if current_page in news_records:
         for l in current_news:
             if l not in news_records[current_page]:
-                l_sign = l + '\n' + PAGE_LIST[current_page]['sign']
-                try:
-                    bot.send_message(CHANNEL_NAME, l_sign, parse_mode='Markdown', disable_web_page_preview=True)
-                except Exception as err:
-                    logging.error('Error to send message to channel: {}'.format(str(err)))
+                l_with_sign = l + '\n' + PAGE_LIST[current_page]['sign']
+                if DEBUG_LEVEL == logging.DEBUG:
+                    logging.debug('Debug channel message: {}'.format(l_with_sign))
+                else:
+                    try:
+                        bot.send_message(CHANNEL_NAME, l_with_sign, parse_mode='Markdown',
+                                         disable_web_page_preview=True)
+                    except Exception as err:
+                        logging.error('Error to send message to channel: {}'.format(str(err)))
 
     # Save news
     news_records[current_page] = current_news
 
-# Try to save news
+# Try to save news in file
 try:
     with open(script_data_file, 'wb') as f:
         pickle.dump(news_records, f)
@@ -147,7 +159,7 @@ except Exception as err:
 
 logging.info('Bridge News Bot work done')
 
-# TODO Разобраться со скриптами на бриджеспорт
-# TODO Git
+# TODO Сделать чтобы не править в продакшене руками уровень логгирования и бот айди
 # TODO Сделать закрепленное сообщение в канале чтобы было видно что бот работает и что он делает
 # TODO Сделать переход с сообщения Телеграм сразу внутрь новости
+# TODO Ьолее длительное храниение новостей, чтобы исключить сбои

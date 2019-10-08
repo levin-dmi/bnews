@@ -1,0 +1,7 @@
+For install:
+
+git clone https://github.com/levin-dmi/bnews
+pip3 install -r requirements.txt
+
+set debug level
+set bot id
