@@ -7,10 +7,18 @@ import os
 
 CHANNEL_NAME = '@RuBridgeNews'
 PAGE_LIST = {'Bridgesport': {'url': 'http://bridgesport.ru',
-                             'encoding': 'cp1251',
+                             'encoding': 'utf-8',
                              'soup string':
-                                 'table[class = "contentpaneopen"] td[valign = "top"][class != "createdate"]',
+                                 'section[class *= "CardSlider"] span[class = "CardSlider__ItemTitle"]',
+                             'link soup string': 'section[class *= "CardSlider"] a[class="CardSlider__ItemContent"]',
                              'sign': 'bridgesport.ru', },
+             'Dzen-zbb': {'url': 'https://zen.yandex.ru/id/5bfe862c042fd800aa67035b',
+                          'encoding': 'utf-8',
+                          'soup string': 'div[class *= "card-title"] > div[class="clamp__text-expand"]',
+                          'link soup string': 'a[class="card-image-view__clickable"]',
+                          'max records': 3,
+                          'cat link after': '?',
+                          'sign': 'Записки бриджевой блондинки', },
              'ebl': {'url': 'http://www.eurobridge.org',
                      'encoding': 'utf-8',
                      'soup string': 'div[class = "item-details"] h3',
@@ -147,13 +155,27 @@ for current_page in PAGE_LIST:
 
     current_news = []
     nn = parsing_page(loaded_page, PAGE_LIST[current_page]['soup string'])  # list of news
+    if 'max records' in PAGE_LIST[current_page]:
+        del nn[PAGE_LIST[current_page]['max records']:]
     if 'link soup string' in PAGE_LIST[current_page]:
         ln = parsing_page(loaded_page, PAGE_LIST[current_page]['link soup string'], "href")  # list of links
+        if 'max records' in PAGE_LIST[current_page]:
+            del ln[PAGE_LIST[current_page]['max records']:]
+        if 'cat link after' in PAGE_LIST[current_page]:
+            ln2 = []
+            for ln_link in ln:
+                symbol_pos = ln_link.find(PAGE_LIST[current_page]['cat link after'])
+                ln_link = ln_link[:symbol_pos] if symbol_pos > -1 else None
+                ln2.append(ln_link)
+            ln = ln2
     else:
         ln = [PAGE_LIST[current_page]['url']] * len(nn)
     for (n, li) in zip(nn, ln):
-        if li[0:4] != 'http':
-            li = PAGE_LIST[current_page]['url'] + '/' + li  # correct relative link
+        if li[0:4] != 'http':  # correct relative link
+            if li[0] == '/':
+                li = PAGE_LIST[current_page]['url'] + li
+            else:
+                li = PAGE_LIST[current_page]['url'] + '/' + li
         new_el = {'news': n,
                   'sign': PAGE_LIST[current_page]['sign'],
                   'link': li, }
@@ -163,7 +185,6 @@ for current_page in PAGE_LIST:
     if current_page in news_records:
         for li in current_news:
             if not any(nr['news'] == li['news'] for nr in news_records[current_page]):  # if new news not in records
-#            if li['news'] not in news_records[current_page]:
                 l_with_sign = li['news'] + '\n' + '[' + li['sign'] + '](' + li['link'] + ')'
                 if DEBUG_LEVEL == logging.DEBUG:
                     logging.debug('Debug channel message: {}'.format(l_with_sign))
@@ -188,7 +209,7 @@ except Exception as err:
 logging.info('Bridge News Bot work done')
 
 
-
+# TODO Разобраться с git clone на удаленном сервере, проверить тесты, улучшить читаемость переменные и добавить функций
 # TODO Сделать чтобы не править в продакшене руками уровень логгирования и бот айди
 # TODO Сделать закрепленное сообщение в канале чтобы было видно что бот работает и что он делает
 # TODO Более длительное храниение новостей, чтобы исключить сбои
